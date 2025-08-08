@@ -1,0 +1,3 @@
+make validate-env-example
+make build
+make lint

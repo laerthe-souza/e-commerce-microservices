@@ -1,0 +1,114 @@
+services:
+  db:
+    container_name: pg
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=docker
+      - POSTGRES_PASSWORD=docker
+      - POSTGRES_DB=microservices
+    ports:
+      - 5432
+    volumes:
+      - ./tmp/pg:/var/lib/postgresql/data 
+      - ./db:/docker-entrypoint-initdb.d
+
+  broker:
+    container_name: rabbit
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_DEFAULT_VHOST=microservices
+    image: rabbitmq:management
+    ports:
+      - 5672
+      - 15672
+
+  otel-collector:
+    container_name: otel
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otel-collector.config.yml"]
+    volumes:
+      - ./otel-collector.config.yml:/etc/otel-collector.config.yml
+    ports:
+      - 4318:4318
+      - 4317:4317 
+
+  jaeger:
+    image: jaegertracing/jaeger:2.3.0
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - 16686:16686 
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:16686"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+
+  events-failure-ms:
+    container_name: events-failure-ms
+    build:
+      context: ./services/events-failure-ms
+      target: development
+      dockerfile: ./Dockerfile
+    ports:
+      - 5001:5001
+    volumes:
+      - ./services/events-failure-ms:/home/node/app
+    user: node
+    depends_on:
+      - db
+      - broker
+      - otel-collector
+      - jaeger
+
+  notifications-ms:
+    container_name: notifications-ms
+    build:
+      context: ./services/notifications-ms
+      target: development
+      dockerfile: ./Dockerfile
+    ports:
+      - 5002:5002
+    volumes:
+      - ./services/notifications-ms:/home/node/app
+    user: node
+    depends_on:
+      - broker
+      - otel-collector
+      - jaeger
+
+  orders-ms:
+    container_name: orders-ms
+    build:
+      context: ./services/orders-ms
+      target: development
+      dockerfile: ./Dockerfile
+    ports:
+      - 5003:5003
+    volumes:
+      - ./services/orders-ms:/home/node/app
+    user: node
+    depends_on:
+      - db
+      - broker
+      - otel-collector
+      - jaeger
+
+  payments-ms:
+    container_name: payments-ms
+    build:
+      context: ./services/payments-ms
+      target: development
+      dockerfile: ./Dockerfile
+    ports:
+      - 5004:5004
+    volumes:
+      - ./services/payments-ms:/home/node/app
+    user: node
+    depends_on:
+      - broker
+      - otel-collector
+      - jaeger

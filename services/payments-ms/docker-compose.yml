@@ -1,0 +1,11 @@
+services:
+  app:
+    build:
+      context: .
+      target: devcontainer
+      dockerfile: ./Dockerfile
+    ports:
+      - ${PORT}:${PORT}
+    volumes:
+      - .:/home/node/app
+    user: node
