@@ -1,6 +1,8 @@
 import { execSync } from 'child_process';
 import { readFileSync, existsSync, writeFileSync } from 'fs';
 
+import { envVariablesSchema } from '@infrastructure/config/env/env.validation';
+
 try {
   const envPath = '.env';
   const envExamplePath = '.env.example';
@@ -37,9 +39,30 @@ try {
 
   const envs = extractKeys(envsFile);
   const envsExample = extractKeys(readFileSync(envExamplePath));
+  const envsSchema = Object.keys(envVariablesSchema.shape);
 
   if (!envs.length) {
     console.error(`🚨 .env is empty.`);
+    process.exit(1);
+  }
+
+  if (!envs.every(env => envsSchema.includes(env))) {
+    console.error(
+      `🚨 schema in env.validation.ts is missing the following environment variables defined in .env file:\n\n- ${envs
+        .filter(env => !envsSchema.includes(env))
+        .join('\n- ')}\n`,
+    );
+
+    process.exit(1);
+  }
+
+  if (!envsSchema.every(env => envs.includes(env))) {
+    console.error(
+      `🚨 .env file is missing the following environment variables defined in schema in env.validation.ts file:\n\n- ${envsSchema
+        .filter(env => !envs.includes(env))
+        .join('\n- ')}\n`,
+    );
+
     process.exit(1);
   }
 
@@ -50,7 +73,7 @@ try {
 
     if (missingEnvs?.length) {
       console.warn(
-        `\n🤔 The following values are missing in .env file:\n\n${missingEnvs.join('\n')}\n`,
+        `\n🤔 The following values are missing in .env file:\n\n- ${missingEnvs.join('\n- ')}\n`,
       );
     }
 
@@ -59,7 +82,7 @@ try {
     const missingEnvs = envs?.filter(env => !envsExample?.includes(env));
 
     console.error(
-      `\n🚨 The following values are missing in .env.example file:\n\n${missingEnvs?.join('\n')}\n`,
+      `\n🚨 The following values are missing in .env.example file:\n\n- ${missingEnvs?.join('\n- ')}\n`,
     );
 
     process.exit(1);

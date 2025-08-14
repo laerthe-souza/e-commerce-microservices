@@ -16,16 +16,16 @@ USER node:node
 
 CMD [ "sh", "/home/node/start-dev.sh" ]
 
-# ---------- Build Stage ---------- #
-FROM node:22-slim AS development
+# ---------- Development Stage ---------- #
+FROM node:22-alpine AS development
 
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+RUN apk add git --no-cache
 
 WORKDIR /home/node/app
 
 USER node:node
 
-CMD [ "sh", "-c", "yarn prisma migrate && yarn start:dev" ]
+CMD [ "sh", "-c", "yarn prisma generate && yarn prisma migrate deploy && yarn start:dev" ]
 
 # ---------- Build Stage ---------- #
 FROM node:22-alpine AS build

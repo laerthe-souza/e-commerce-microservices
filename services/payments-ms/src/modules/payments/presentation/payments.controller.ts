@@ -8,9 +8,13 @@ import { LoggingService } from '@infrastructure/config/logging/logging.service';
 import { EVENTS } from '@shared/constants/events.constant';
 import { eventHandlerTryCatch } from '@shared/helpers/events-handler-try-catch.helper';
 
+import { CreateProductUseCase } from '../application/usecases/create-product.usecase';
 import { CreateSubscriptionUseCase } from '../application/usecases/create-subscription.usecase';
+import { UpdateProductUseCase } from '../application/usecases/update-product.usecase';
 import { ICreatePaymentRequestDTO } from './dtos/create-payment-request.dto';
+import { ICreateProductRequestDTO } from './dtos/create-product-request.dto';
 import { ICreateSubscriptionRequestDTO } from './dtos/create-subscription-request.dto';
+import { IUpdateProductRequestDTO } from './dtos/update-product-request.dto';
 
 @Controller('payments')
 export class PaymentsController {
@@ -20,6 +24,8 @@ export class PaymentsController {
     private readonly receiveEvents: ReceiveEventsUseCase,
     private readonly createPayment: CreatePaymentUseCase,
     private readonly createSubscription: CreateSubscriptionUseCase,
+    private readonly createProduct: CreateProductUseCase,
+    private readonly updateProduct: UpdateProductUseCase,
   ) {}
 
   @Post('webhook')
@@ -64,6 +70,34 @@ export class PaymentsController {
       });
 
       return this.createSubscription.execute(parsedSubscription);
+    })(data, ctx);
+  }
+
+  @EventPattern(EVENTS.PRODUCT_CREATED.name)
+  async onProductCreated(@Payload() data: any, @Ctx() ctx: RmqContext) {
+    return eventHandlerTryCatch(async product => {
+      this.logger.info(
+        'New product, creating product in payment gateway...',
+        product,
+      );
+
+      const parsedProduct = ICreateProductRequestDTO.create(product);
+
+      await this.createProduct.execute(parsedProduct);
+    })(data, ctx);
+  }
+
+  @EventPattern(EVENTS.PRODUCT_UPDATED.name)
+  async onProductUpdated(@Payload() data: any, @Ctx() ctx: RmqContext) {
+    return eventHandlerTryCatch(async product => {
+      this.logger.info(
+        'Product updated, updating product in payment gateway...',
+        product,
+      );
+
+      const parsedProduct = IUpdateProductRequestDTO.create(product);
+
+      await this.updateProduct.execute(parsedProduct);
     })(data, ctx);
   }
 }

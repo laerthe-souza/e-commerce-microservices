@@ -1,0 +1,9 @@
+# Directories
+/dist
+/node_modules
+/build
+/coverage
+
+# Files
+yarn-error.log*
+.env

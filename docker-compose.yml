@@ -8,10 +8,9 @@ services:
       - POSTGRES_PASSWORD=docker
       - POSTGRES_DB=microservices
     ports:
-      - 5432
+      - 5435:5432
     volumes:
       - ./tmp/pg:/var/lib/postgresql/data 
-      - ./db:/docker-entrypoint-initdb.d
 
   broker:
     container_name: rabbit
@@ -23,7 +22,7 @@ services:
     image: rabbitmq:management
     ports:
       - 5672
-      - 15672
+      - 15675:15672
 
   otel-collector:
     container_name: otel
@@ -109,6 +108,23 @@ services:
       - ./services/payments-ms:/home/node/app
     user: node
     depends_on:
+      - broker
+      - otel-collector
+      - jaeger
+
+  catalog-ms:
+    container_name: catalog-ms
+    build:
+      context: ./services/catalog-ms
+      target: development
+      dockerfile: ./Dockerfile
+    ports:
+      - 5005:5005
+    volumes:
+      - ./services/catalog-ms:/home/node/app
+    user: node
+    depends_on:
+      - db
       - broker
       - otel-collector
       - jaeger

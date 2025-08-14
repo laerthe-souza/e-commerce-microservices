@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { ZodError, z } from 'zod';
 
 import { IEnvironment } from '@shared/enums/environment.enum';
@@ -13,7 +14,7 @@ const environments = Object.values(IEnvironment) as unknown as readonly [
   ...IEnvironment[],
 ];
 
-const envVariablesSchema = z.object({
+export const envVariablesSchema = z.object({
   API_KEY: z.string({ required_error: IZodErrors.REQUIRED }),
   NODE_ENV: z.enum(environments, {
     required_error: IZodErrors.REQUIRED,
@@ -42,6 +43,8 @@ const envVariablesSchema = z.object({
     .email(IZodErrors.INVALID_EMAIL),
 });
 
+const logger = new Logger(validateEnvVariables.name);
+
 export function validateEnvVariables(
   config: Record<string, string | number | boolean>,
 ) {
@@ -57,10 +60,12 @@ export function validateEnvVariables(
         data => `Env variable ${data.path[0]} error - ${data.message}`,
       );
 
-      throw new Error(`\n\n${formattedErrors.join('\n')}\n`);
+      logger.error(`\n\n${formattedErrors.join('\n')}\n`);
     } else {
-      throw error;
+      logger.error(error.message);
     }
+
+    throw error;
   }
 }
 

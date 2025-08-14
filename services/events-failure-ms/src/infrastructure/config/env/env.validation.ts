@@ -13,8 +13,6 @@ const environments = Object.values(IEnvironment) as unknown as readonly [
   ...IEnvironment[],
 ];
 
-const logger = new Logger(validateEnvVariables.name);
-
 export const envVariablesSchema = z.object({
   API_KEY: z.string({ required_error: IZodErrors.REQUIRED }),
   NODE_ENV: z.enum(environments, {
@@ -37,6 +35,8 @@ export const envVariablesSchema = z.object({
     .url(IZodErrors.INVALID_URL),
   SERVICE_NAME: z.string({ required_error: IZodErrors.REQUIRED }),
 });
+
+const logger = new Logger(validateEnvVariables.name);
 
 export function validateEnvVariables(
   config: Record<string, string | number | boolean>,

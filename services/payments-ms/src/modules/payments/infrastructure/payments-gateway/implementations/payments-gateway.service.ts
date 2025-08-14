@@ -1,7 +1,9 @@
 import Stripe from 'stripe';
 
 import { ICreatePaymentInputDTO } from '../contracts/dtos/create-payment-input.dto';
+import { ICreateProductInputDTO } from '../contracts/dtos/create-product-input.dto';
 import { ICreateSubscriptionInputDTO } from '../contracts/dtos/create-subscription-input.dto';
+import { IUpdateProductInputDTO } from '../contracts/dtos/update-product-input.dto';
 import { IPaymentsGateway } from '../contracts/payments-gateway.contract';
 
 export class PaymentsGatewayService implements IPaymentsGateway {
@@ -27,6 +29,27 @@ export class PaymentsGatewayService implements IPaymentsGateway {
         allow_redirects: 'never',
       },
       metadata,
+    });
+  }
+
+  async createProduct(input: ICreateProductInputDTO): Promise<void> {
+    await this.stripe.products.create({
+      name: input.name,
+      description: input.description,
+      metadata: input.metadata,
+      default_price_data: {
+        currency: input.currency,
+        unit_amount: input.price,
+      },
+    });
+  }
+
+  async updateProduct(input: IUpdateProductInputDTO): Promise<void> {
+    await this.stripe.products.update(input.id, {
+      name: input.name,
+      description: input.description,
+      metadata: input.metadata,
+      default_price: input.price?.toString(),
     });
   }
 

@@ -20,5 +20,12 @@ export class ReceiveEventsUseCase {
         transactionId: event.data.object.id,
       });
     }
+
+    if (event.type === 'product.created') {
+      await this.eventPublisher.emit(EVENTS.PAYMENT_PRODUCT_CREATED.name, {
+        id: event.data.object.metadata.id,
+        externalId: event.data.object.id,
+      });
+    }
   }
 }
